@@ -10,11 +10,11 @@ async function bootstrap() {
 
   // Enable CORS for development and production environments
   app.enableCors({
-    origin: ['http://test-chatapp-b09g.onrender.com', 'http://localhost:3000'], // Adjust the origin as needed
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: '*', // For testing purposes, you can allow all origins
+    methods: 'GET, POST, PUT, DELETE',
     allowedHeaders: 'Content-Type, Accept',
-    credentials: true,
   });
+  
 
   // Use the port from the environment variable, default to 3000 for local development
   const port = process.env.PORT || 3000;
