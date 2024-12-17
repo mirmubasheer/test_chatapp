@@ -2,6 +2,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
+  MessageBody,
+  OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
@@ -9,33 +11,37 @@ import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
   cors: {
-    origin: '*', // Allow all origins (adjust for production)
+    origin: '*', // Replace with frontend origin in production
+    methods: ['GET', 'POST'],
   },
+  transports: ['websocket'], // Only WebSocket transport
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer() server: Server;
 
-  private users: Map<string, string> = new Map();
+  // Called when the server is initialized
+  afterInit(server: Server) {
+    console.log('WebSocket Server Initialized');
+  }
 
+  // Triggered when a client connects
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
   }
 
+  // Triggered when a client disconnects
   handleDisconnect(client: Socket) {
     console.log(`Client disconnected: ${client.id}`);
-    this.users.delete(client.id);
   }
 
-  @SubscribeMessage('join_chat')
-  handleJoinChat(client: Socket, payload: { username: string }) {
-    console.log(`${payload.username} joined the chat`);
-    this.users.set(client.id, payload.username);
-    this.server.emit('user_connected', { username: payload.username });
-  }
-
+  // Handle incoming messages
   @SubscribeMessage('send_message')
-  handleMessage(client: Socket, payload: { message: string }) {
-    const sender = this.users.get(client.id) || 'Anonymous';
-    this.server.emit('receive_message', { sender, message: payload.message });
+  handleMessage(@MessageBody() data: { message: string }): void {
+    console.log('Message received:', data.message);
+
+    // Broadcast the message to all connected clients
+    this.server.emit('receive_message', { message: data.message });
   }
 }
